@@ -4,10 +4,19 @@ import Components from 'unplugin-vue-components/vite';
 import { AntDesignVueResolver } from 'unplugin-vue-components/resolvers';
 import path from 'path';
 import svgLoader from 'vite-svg-loader';
-
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd()); // ✅ 根据 --mode 自动加载正确的 .env 文件
+  
+  // Parse allowed hosts from env var, with sensible defaults
+  const getAllowedHosts = () => {
+    const defaults = ['localhost', '127.0.0.1'];
+    const customHosts = env.VITE_ALLOWED_HOSTS 
+      ? env.VITE_ALLOWED_HOSTS.split(',').map(h => h.trim())
+      : [];
+    return [...defaults, ...customHosts];
+  };
+  
   return {
     root: __dirname,
     // 根据环境变量 VITE_IS_CLIENT 决定使用哪个 base 
@@ -37,6 +46,7 @@ export default defineConfig(({ mode }) => {
       port: env.VITE_PORT || 5173,
       host: '0.0.0.0',
       strictPort: true,
+      allowedHosts: getAllowedHosts(),
       hmr: {
         protocol: 'wss',
         clientPort: 443,
