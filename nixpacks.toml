@@ -1,35 +1,43 @@
 providers = ["node"]
 
 [variables]
-# Default to production mode for Dokploy/Nixpacks
 NODE_ENV = "production"
 LEMON_PROFILE = "production"
-# Persist data under this root (mount a volume here in Dokploy)
 LEMON_AI_PATH = "/app"
-# Pin Node version to align with existing Dockerfiles
 NIXPACKS_NODE_VERSION = "22"
 
+# Required for Docker runtime
+DOCKER_HOST_ADDR = "host.docker.internal"
+ACTUAL_HOST_WORKSPACE_PATH = "/app/workspace"
+
+# Lemon AI config
+STORAGE_PATH = "data/database.sqlite"
+WORKSPACE_DIR = "workspace"
+RUNTIME_TYPE = "local-docker"
+ENABLE_KNOWLEDGE = "ON"
+
 [phases.install]
-# Install only production deps for the backend
 cmds = [
   "corepack enable",
   "corepack prepare pnpm@9 --activate || true",
-  'if [ "${INSTALL_DEV_DEPS:-false}" = "true" ] || [ "${LEMON_PROFILE:-production}" = "development" ]; then pnpm install --frozen-lockfile; else pnpm install --frozen-lockfile --prod; fi'
+  "pnpm install --frozen-lockfile"
 ]
 
-[phases.frontend]
+[phases.frontend-install]
 depends_on = ["install"]
-# Optional: build SPA if requested by env (kept off by default)
 cmds = [
-  'if [ "${BUILD_FRONTEND:-false}" = "true" ]; then \
-    corepack enable && \
-    corepack prepare pnpm@9 --activate || true && \
-    cd frontend && pnpm install --frozen-lockfile && pnpm run build; \
-  else \
-    echo "Skipping frontend build (set BUILD_FRONTEND=true to enable)"; \
-  fi'
+  "cd frontend && pnpm install --frozen-lockfile"
+]
+
+[phases.setup]
+depends_on = ["frontend-install"]
+cmds = [
+  # Create required directories
+  "mkdir -p /app/data /app/workspace",
+  # Initialize database tables
+  "node src/models/sync.js"
 ]
 
 [start]
-# Default to production start; allow dev via LEMON_PROFILE=development
-cmd = 'mkdir -p "${LEMON_AI_PATH:-/app}/data" && node src/models/sync.js && if [ "${LEMON_PROFILE:-production}" = "development" ]; then npm run dev; else node bin/www; fi'
+# Start backend in background, then frontend in foreground (mimics 'make run')
+cmd = "npm run start & cd frontend && npm run dev"
