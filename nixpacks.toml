@@ -2,42 +2,37 @@ providers = ["node"]
 
 [variables]
 NODE_ENV = "production"
-LEMON_PROFILE = "production"
-LEMON_AI_PATH = "/app"
 NIXPACKS_NODE_VERSION = "22"
 
-# Required for Docker runtime
+# Lemon AI required env vars
 DOCKER_HOST_ADDR = "host.docker.internal"
 ACTUAL_HOST_WORKSPACE_PATH = "/app/workspace"
-
-# Lemon AI config
 STORAGE_PATH = "data/database.sqlite"
 WORKSPACE_DIR = "workspace"
 RUNTIME_TYPE = "local-docker"
 ENABLE_KNOWLEDGE = "ON"
 
-[phases.install]
+[phases.setup]
+nixPkgs = ["nodejs_22", "npm"]
 cmds = [
-  "corepack enable",
-  "corepack prepare pnpm@9 --activate || true",
-  "pnpm install --frozen-lockfile"
+  "mkdir -p /app/data /app/workspace"
 ]
 
-[phases.frontend-install]
+[phases.install]
+depends_on = ["setup"]
+cmds = [
+  # Backend deps
+  "npm install --production",
+  # Frontend deps
+  "cd frontend && npm install"
+]
+
+[phases.init]
 depends_on = ["install"]
 cmds = [
-  "cd frontend && pnpm install --frozen-lockfile"
-]
-
-[phases.setup]
-depends_on = ["frontend-install"]
-cmds = [
-  # Create required directories
-  "mkdir -p /app/data /app/workspace",
   # Initialize database tables
   "node src/models/sync.js"
 ]
 
 [start]
-# Start backend in background, then frontend in foreground (mimics 'make run')
 cmd = "npm run start & cd frontend && npm run dev"
