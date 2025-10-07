@@ -1,0 +1,35 @@
+providers = ["node"]
+
+[variables]
+# Default to production mode for Dokploy/Nixpacks
+NODE_ENV = "production"
+LEMON_PROFILE = "production"
+# Persist data under this root (mount a volume here in Dokploy)
+LEMON_AI_PATH = "/app"
+# Pin Node version to align with existing Dockerfiles
+NIXPACKS_NODE_VERSION = "22"
+
+[phases.install]
+# Install only production deps for the backend
+cmds = [
+  "corepack enable",
+  "corepack prepare pnpm@9 --activate || true",
+  'if [ "${INSTALL_DEV_DEPS:-false}" = "true" ] || [ "${LEMON_PROFILE:-production}" = "development" ]; then pnpm install --frozen-lockfile; else pnpm install --frozen-lockfile --prod; fi'
+]
+
+[phases.frontend]
+depends_on = ["install"]
+# Optional: build SPA if requested by env (kept off by default)
+cmds = [
+  'if [ "${BUILD_FRONTEND:-false}" = "true" ]; then \
+    corepack enable && \
+    corepack prepare pnpm@9 --activate || true && \
+    cd frontend && pnpm install --frozen-lockfile && pnpm run build; \
+  else \
+    echo "Skipping frontend build (set BUILD_FRONTEND=true to enable)"; \
+  fi'
+]
+
+[start]
+# Default to production start; allow dev via LEMON_PROFILE=development
+cmd = 'mkdir -p "${LEMON_AI_PATH:-/app}/data" && node src/models/sync.js && if [ "${LEMON_PROFILE:-production}" = "development" ]; then npm run dev; else node bin/www; fi'
