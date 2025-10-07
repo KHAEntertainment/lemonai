@@ -138,6 +138,11 @@ docker run -it --rm --pull=always \
   hexdolemonai/lemon:latest make run
 ```
 
+## Cloud Deployment
+
+Set the `VITE_ALLOWED_HOSTS` environment variable with comma-separated domains:
+```bash
+VITE_ALLOWED_HOSTS=yourdomain.com,.yourdomain.com
 ### Contributing
 
 For those who'd like to contribute code, see our [Contribution Guide](https://github.com/hexdocom/lemon/blob/main/CONTRIBUTING.md). At the same time, please consider supporting Lemon AI by sharing it on social media and at events and conferences.
