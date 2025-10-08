@@ -26,7 +26,7 @@
 
 <script setup>
 import { ref, watch, onMounted } from 'vue';
-import * as XLSX from 'xlsx';
+import { Workbook } from 'exceljs';
 
 // 定义 props
 const props = defineProps({
@@ -56,13 +56,26 @@ const parseXLSX = async (arrayBuffer) => {
       throw new Error('ArrayBuffer already disposed');
     }
 
-    // 解析 XLSX
-    const workbook = XLSX.read(uint8Array, { type: 'array', defval: '' });
-    const firstSheetName = workbook.SheetNames[0];
-    const worksheet = workbook.Sheets[firstSheetName];
+    // 使用 ExcelJS 解析 XLSX
+    const workbook = new Workbook();
+    await workbook.xlsx.load(arrayBuffer);
+    const worksheet = workbook.worksheets[0];
 
-    // 转换为 JSON 数据，设置 defval 确保空值为空字符串
-    const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: '' });
+    const jsonData = [];
+    if (worksheet) {
+      worksheet.eachRow({ includeEmpty: true }, (row) => {
+        const values = row.values.slice(1).map(v => {
+          if (v === null || v === undefined) return '';
+          if (typeof v === 'object') {
+            if (Array.isArray(v.richText)) return v.richText.map(rt => rt.text).join('');
+            if (v.text !== undefined && v.text !== null) return String(v.text);
+            if (v.result !== undefined && v.result !== null) return String(v.result);
+          }
+          return String(v);
+        });
+        jsonData.push(values);
+      });
+    }
     tableData.value = jsonData;
 
     isLoading.value = false;

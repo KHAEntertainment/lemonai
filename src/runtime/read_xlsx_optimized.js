@@ -1,5 +1,5 @@
 const fs = require('fs');
-const xlsx = require('node-xlsx');
+const ExcelJS = require('exceljs');
 
 /**
  * 将 xlsx 数据转换为 markdown 格式
@@ -57,17 +57,47 @@ class OptimizedXlsxReader {
   /**
    * 读取 XLSX 文件
    * @param {string} filePath - 文件路径
-   * @returns {Object} 包含内容、是否截断、统计信息的对象
+   * @returns {Promise<Object>} 包含内容、是否截断、统计信息的对象
    */
-  readXlsxFile(filePath) {
+  async readXlsxFile(filePath) {
     try {
       // 检查文件是否存在
       if (!fs.existsSync(filePath)) {
         throw new Error(`文件不存在: ${filePath}`);
       }
 
-      // 使用 node-xlsx 解析文件
-      const sheets = xlsx.parse(filePath);
+      // 使用 ExcelJS 解析文件
+      const workbook = new ExcelJS.Workbook();
+      await workbook.xlsx.readFile(filePath);
+
+      // 将 ExcelJS 工作簿转换为与 node-xlsx 相同的数据结构
+      const sheets = [];
+      workbook.eachSheet((worksheet) => {
+        const data = [];
+        worksheet.eachRow({ includeEmpty: true }, (row) => {
+          // ExcelJS 的 row.values 是 1 索引，使用 slice(1)
+          const rowValues = row.values
+            .slice(1)
+            .map((v) => {
+              if (v === null || v === undefined) return '';
+              // 处理富文本、公式结果等常见对象值，保持字符串输出
+              if (typeof v === 'object') {
+                if (Array.isArray(v.richText)) {
+                  return v.richText.map((rt) => rt.text).join('');
+                }
+                if (v.text !== undefined && v.text !== null) {
+                  return String(v.text);
+                }
+                if (v.result !== undefined && v.result !== null) {
+                  return String(v.result);
+                }
+              }
+              return String(v);
+            });
+          data.push(rowValues);
+        });
+        sheets.push({ name: worksheet.name, data });
+      });
 
       const result = {
         content: '',
@@ -262,9 +292,9 @@ class OptimizedXlsxReader {
  * @param {number} maxRows - 最大行数限制，默认 30
  * @returns {Object} 读取结果
  */
-function readXlsxOptimized(filePath, maxChars = 10000, maxRows = 30) {
+async function readXlsxOptimized(filePath, maxChars = 10000, maxRows = 30) {
   const reader = new OptimizedXlsxReader(maxChars, maxRows);
-  return reader.readXlsxFile(filePath);
+  return await reader.readXlsxFile(filePath);
 }
 
 module.exports = {
