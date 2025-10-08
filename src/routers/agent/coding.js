@@ -1,5 +1,5 @@
 // @ts-ignore
-const router = require("koa-router")();
+const router = new (require("@koa/router"))();
 const { coding } = require("@src/editor/coding.js");
 
 // 接口地址: /api/agent/coding/ai

@@ -1,4 +1,4 @@
-const router = require("koa-router")();
+const router = new (require("@koa/router"))();
 
 const Message = require("@src/models/Message");
 const Conversation = require("@src/models/Conversation")

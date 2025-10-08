@@ -1,4 +1,4 @@
-const router = require("koa-router")();
+const router = new (require("@koa/router"))();
 
 const DockerRuntime = require("@src/runtime/DockerRuntime.local");
 

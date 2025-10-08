@@ -1,5 +1,5 @@
 // @ts-ignore
-const router = require("koa-router")();
+const router = new (require("@koa/router"))();
 
 router.prefix("/api/runtime");
 
