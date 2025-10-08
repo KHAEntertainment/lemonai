@@ -1,4 +1,4 @@
-const router = require("koa-router")();
+const router = new (require("@koa/router"))();
 
 const Model = require('@src/models/Model');
 const Platform = require('@src/models/Platform');

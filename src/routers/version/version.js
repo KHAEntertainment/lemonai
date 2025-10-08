@@ -1,4 +1,4 @@
-const router = require('koa-router')();
+const router = new (require('@koa/router'))();
 const axios = require('axios');
 const { version } = require('../../../package.json'); 
 

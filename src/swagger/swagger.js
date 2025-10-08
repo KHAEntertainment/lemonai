@@ -1,4 +1,4 @@
-const router = require('koa-router')() // Import router function   
+const router = new (require('@koa/router'))() // Import router function
 const swaggerJSDoc = require('swagger-jsdoc')
 const path = require('path')
 const swaggerDefinition = {

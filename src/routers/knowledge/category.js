@@ -1,4 +1,4 @@
-const router = require("koa-router")();
+const router = new (require("@koa/router"))();
 
 // 获取 category 列表
 router.get("/categories", async ({ state, response }) => {

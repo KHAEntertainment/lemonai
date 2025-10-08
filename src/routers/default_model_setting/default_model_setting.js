@@ -1,4 +1,4 @@
-const router = require("koa-router")();
+const router = new (require("@koa/router"))();
 const DefaultModelSetting = require("@src/models/DefaultModelSetting");
 const Model = require('@src/models/Model')
 const { updateDefaultModel } = require('@src/utils/default_model')
