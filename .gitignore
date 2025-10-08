@@ -43,3 +43,5 @@ __pycache__
 
 # browser bin
 resources/browser/chromium
+# Phase 6 planning (work in progress)
+phase6/
