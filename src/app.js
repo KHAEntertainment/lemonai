@@ -6,7 +6,7 @@ global.logging = logging;
 const Koa = require('koa')
 const app = new Koa()
 const json = require('koa-json')
-const onerror = require('koa-onerror')
+const { onerror } = require('koa-onerror')
 const { koaBody } = require('koa-body');
 const logger = require('koa-logger')
 
