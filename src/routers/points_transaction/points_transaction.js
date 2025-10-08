@@ -1,4 +1,4 @@
-const router = require("koa-router")();
+const router = new (require("@koa/router"))();
 const Conversation = require('@src/models/Conversation')
 
 const forwardRequest = require('@src/utils/sub_server_forward_request')

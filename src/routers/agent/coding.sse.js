@@ -1,5 +1,5 @@
 // @ts-ignore
-const router = require("koa-router")();
+const router = new (require("@koa/router"))();
 const Conversation = require("@src/models/Conversation");
 const { getContainerCloseHandler } = require('./utils/coding-helpers');
 const { setupCodingTask } = require('./utils/coding-setup');

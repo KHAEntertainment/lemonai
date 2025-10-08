@@ -1,4 +1,4 @@
-const router = require("koa-router")();
+const router = new (require("@koa/router"))();
 
 const UserProviderConfig = require("@src/models/UserProviderConfig");
 const UserSearchSetting = require("@src/models/UserSearchSetting");

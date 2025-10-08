@@ -1,5 +1,5 @@
 // @ts-ignore
-const router = require("koa-router")();
+const router = new (require("@koa/router"))();
 
 // 默认首页
 router.get("/", async ({ response, request, redis }) => {

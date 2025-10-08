@@ -1,4 +1,4 @@
-const router = require("koa-router")();
+const router = new (require("@koa/router"))();
 require("module-alias/register");
 
 const agent_remix = require("@src/routers/agent_store/agent_remix");
