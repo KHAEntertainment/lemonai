@@ -1,6 +1,5 @@
 const fs = require('fs').promises;
 const path = require('path');
-const xlsx = require('node-xlsx');
 
 const { readXlsxOptimized } = require('./read_xlsx_optimized');
 
@@ -20,8 +19,8 @@ async function read_file(filepath) {
     console.log(`Reading file: ${absolute_path}, Type based on extension: ${extension}`);
     // xlsx file handling
     if (extension === '.xlsx') {
-      // use node-xlsx to parse xlsx file and convert to markdown
-      const result = readXlsxOptimized(absolute_path);
+      // use ExcelJS via optimized reader (async) to parse xlsx file and convert to markdown
+      const result = await readXlsxOptimized(absolute_path);
       return result.content;
     } else {
       // try reading as utf8
