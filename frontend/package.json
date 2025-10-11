@@ -36,7 +36,7 @@
     "mammoth": "^1.9.1",
     "markdown-it": "^14.1.0",
     "markdown-it-attrs": "^4.3.1",
-    "marked": "^15.0.8",
+    "marked": "^16.4.0",
     "md5": "^2.3.0",
     "mermaid": "^11.10.0",
     "mitt": "^3.0.1",
