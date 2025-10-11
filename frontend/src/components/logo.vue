@@ -1,11 +1,16 @@
 <template>
     <div class="logo-title">
-        <img class="logo" :src="LemonAI" alt="logo" />
+        <img class="logo" :src="logoSrc" alt="logo" />
         <!-- <span class="beta-tag">Beta</span> -->
     </div>
 </template>
 <script setup> 
+import { computed } from 'vue'
+import { useSettingsStore } from '@/store/modules/settings'
 import LemonAI from '@/assets/LemonAI.png'
+
+const settings = useSettingsStore()
+const logoSrc = computed(() => settings.logoUrl || LemonAI)
 </script>
 <style scoped> 
 .logo-title {

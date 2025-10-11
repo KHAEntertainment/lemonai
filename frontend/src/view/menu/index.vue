@@ -39,7 +39,7 @@
         </div>
 
         <!-- Footer Social Links -->
-        <div class="footer-social">
+        <div class="footer-social" v-if="settings.footerVisible">
           <a-tooltip title="Homepage">
             <a href="https://www.lemonai.ai" target="_blank" rel="noopener noreferrer" class="footer-social-link">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="footer-social-icon" xmlns="http://www.w3.org/2000/svg">
@@ -112,10 +112,12 @@ import emitter from '@/utils/emitter'
 import { useI18n } from 'vue-i18n'
 
 import service from '@/services/default-model-setting'
+import { useSettingsStore } from '@/store/modules/settings'
 
 const router = useRouter()
 const chatStore = useChatStore()
 const userStore = useUserStore()
+const settings = useSettingsStore()
 const { agent, mode } = storeToRefs(chatStore)
 const { user, membership } = storeToRefs(userStore)
 

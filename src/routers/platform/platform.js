@@ -243,8 +243,8 @@ router.delete("/:platform_id", async ({ state, params, response }) => {
  */
 router.post("/check_api_availability", async ({ request, response }) => {
   const body = request.body || {};
-  const { base_url, api_key, model } = body
-  const res = await checkLlmApiAvailability(base_url, api_key, model)
+  const { base_url, api_key, model, platform_name } = body
+  const res = await checkLlmApiAvailability(base_url, api_key, model, platform_name)
   return response.success(res)
 })
 

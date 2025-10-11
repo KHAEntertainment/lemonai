@@ -43,14 +43,20 @@ export default defineConfig(({ mode }) => {
       },
     },
     server: {
-      port: env.VITE_PORT || 5173,
+      port: Number(env.VITE_PORT) || 5173,
       host: '0.0.0.0',
       strictPort: true,
       allowedHosts: getAllowedHosts(),
-      hmr: {
-        protocol: 'wss',
-        clientPort: 443,
-      },
+      // Use secure HMR only when explicitly enabled; default to ws for local dev
+      hmr: env.VITE_HMR_PROTOCOL === 'wss'
+        ? {
+            protocol: 'wss',
+            clientPort: Number(env.VITE_HMR_CLIENT_PORT) || 443,
+          }
+        : {
+            protocol: 'ws',
+            clientPort: Number(env.VITE_PORT) || 5173,
+          },
       proxy: {
         '/api': {
           target: env.VITE_SERVICE_URL || 'http://127.0.0.1:3000',

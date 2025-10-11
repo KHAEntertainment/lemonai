@@ -6,15 +6,10 @@ const os = require('os');
 const DOCKER_HOST_ADDR = process.env.DOCKER_HOST_ADDR;
 const { write_code: util_write_code } = require('./utils/tools');
 const { getDefaultModel } = require('@src/utils/default_model')
+const { getDockerOptions } = require('@src/utils/docker_socket');
 
-let dockerOptions = {};
-if (os.platform() === 'win32') {
-  // Windows: 使用 named pipe
-  dockerOptions.socketPath = '//./pipe/docker_engine';
-} else {
-  // Linux/macOS: 使用默认的 Unix socket
-  dockerOptions.socketPath = '/var/run/docker.sock';
-}
+// Use auto-detection for Docker socket path
+const dockerOptions = getDockerOptions();
 const docker = new Docker(dockerOptions);
 
 const Message = require('@src/utils/message');

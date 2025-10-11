@@ -118,14 +118,26 @@ const showImportModal = () => {
 
 const resolveMcpServerType = (server) => {
   const { url = "", command = "" } = server;
-  if (url.includes("sse")) {
-    return "sse";
-  } else if (command.startsWith("npx") || command.startsWith("uvx")) {
-    return "stdio";
-  } else if (url.includes("mcp")) {
-    return "streamableHttp";
+  
+  // Check URL-based types first
+  if (url) {
+    if (url.includes("sse")) {
+      return "sse";
+    } else if (url.startsWith("http://") || url.startsWith("https://")) {
+      // Any HTTP URL that's not SSE should be streamableHttp
+      return "streamableHttp";
+    }
   }
-  return "stdio";
+  
+  // Check command-based types
+  if (command) {
+    if (command.startsWith("npx") || command.startsWith("uvx") || command.startsWith("node")) {
+      return "stdio";
+    }
+  }
+  
+  // Default to stdio if we have a command or neither URL nor command
+  return command ? "stdio" : "streamableHttp";
 };
 
 const handleImportOk = () => {

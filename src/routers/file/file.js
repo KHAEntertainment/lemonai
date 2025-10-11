@@ -282,4 +282,68 @@ router.post('/read', async ({ request, response }) => {
   }
 });
 
+/**
+ * @swagger
+ * /api/file/upload_public:
+ *   post:
+ *     summary: Upload public files (logo, favicon)
+ *     tags:  
+ *       - File
+ *     description: This endpoint uploads files to the public/uploads directory and returns public URLs.
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               file:
+ *                 type: string
+ *                 format: binary
+ *                 description: The file to be uploaded
+ *     responses:
+ *       200:
+ *         description: File uploaded successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     url:
+ *                       type: string
+ *                       description: Public URL of the uploaded file
+ *                 code:
+ *                   type: integer
+ *                   description: Status code
+ *                 msg:
+ *                   type: string
+ *                   description: Message
+ */
+router.post('/upload_public', async ({ request, response }) => {
+  const file = request.files.file;
+  if (!file) {
+    return response.error('No file provided');
+  }
+
+  try {
+    const publicUploadsDir = path.join(__dirname, '../../../public/uploads');
+    if (!fs.existsSync(publicUploadsDir)) {
+      fs.mkdirSync(publicUploadsDir, { recursive: true });
+    }
+
+    const fileName = file.originalFilename;
+    const filePath = path.join(publicUploadsDir, fileName);
+    fs.copyFileSync(file.filepath, filePath);
+
+    const publicUrl = `/uploads/${fileName}`;
+    return response.success({ url: publicUrl }, 'File uploaded successfully');
+  } catch (error) {
+    console.error('Upload error:', error);
+    return response.error('Failed to upload file');
+  }
+});
+
 module.exports = exports = router.routes()

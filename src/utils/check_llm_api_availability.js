@@ -1,29 +1,53 @@
-async function checkLlmApiAvailability(baseUrl, apiKey='', model) {
+async function checkLlmApiAvailability(baseUrl, apiKey='', model, platformName='') {
   if (!baseUrl) {
     return { status: false, message: 'Base URL is required.' };
   }
-  const api_url = baseUrl + '/chat/completions'
+  
+  // Handle Gemini separately as it uses a different API structure
+  const isGemini = platformName && platformName.toLowerCase().includes('gemini');
+  
+  let api_url, requestBody, headers;
+  
+  if (isGemini) {
+    // Gemini uses a different endpoint structure
+    const testModel = model || 'gemini-1.5-flash';
+    api_url = `${baseUrl}/v1beta/models/${testModel}:generateContent?key=${apiKey}`;
+    requestBody = {
+      contents: [{
+        parts: [{ text: "hello" }]
+      }],
+      generationConfig: {
+        maxOutputTokens: 5
+      }
+    };
+    headers = {
+      'Content-Type': 'application/json'
+    };
+  } else {
+    // Standard OpenAI-compatible endpoint
+    api_url = baseUrl + '/chat/completions';
+    requestBody = {
+      model: model,
+      messages: [{
+        role: "user",
+        content: "hello"
+      }],
+      max_tokens: 5
+    };
+    headers = {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${apiKey}`
+    };
+  }
+  
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), 8000);
 
   try {
     const response = await fetch(api_url, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}` // API key is usually passed as Bearer
-      },
-      body: JSON.stringify({
-        // This is a simple example request body for the OpenAI Chat Completion API
-        // **Important: Adjust according to your actual LLM API documentation**
-        model: model, // Replace with the model name you are testing
-        messages: [{
-          role: "user",
-          content: "hello" // A simple request content for testing
-        }],
-        max_tokens: 5, // Send a very small request to minimize resource usage and response time
-        enable_thinking:false
-      }),
+      headers: headers,
+      body: JSON.stringify(requestBody),
       signal: controller.signal
     });
 
@@ -31,10 +55,21 @@ async function checkLlmApiAvailability(baseUrl, apiKey='', model) {
       const data = await response.json();
       // Further check the response data, e.g., whether expected fields or error info exist
       // Different LLM API responses may vary, adjust as needed
-      if (data && data.choices && data.choices.length > 0) {
-        return { status: true, message: 'LLM API call succeeded.' };
+      
+      if (isGemini) {
+        // Gemini response structure: { candidates: [{ content: { parts: [{ text: "..." }] } }] }
+        if (data && data.candidates && data.candidates.length > 0) {
+          return { status: true, message: 'LLM API call succeeded.' };
+        } else {
+          return { status: false, message: 'LLM API call succeeded, but Gemini response data is not as expected.' };
+        }
       } else {
-        return { status: false, message: 'LLM API call succeeded, but response data is not as expected.' };
+        // OpenAI-compatible response structure
+        if (data && data.choices && data.choices.length > 0) {
+          return { status: true, message: 'LLM API call succeeded.' };
+        } else {
+          return { status: false, message: 'LLM API call succeeded, but response data is not as expected.' };
+        }
       }
     } else {
       const errorText = await response.text();

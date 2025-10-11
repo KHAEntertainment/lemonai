@@ -214,7 +214,8 @@ const handleOk =  async () => {
   let res = await service.checkApiAvailability({
     "base_url": choose_platform.value.api_url,
     "api_key": choose_platform.value.api_key,
-    "model": selectedModel.value
+    "model": selectedModel.value,
+    "platform_name": choose_platform.value.name
   })
   checkLoading.value = false
   if(res.status){

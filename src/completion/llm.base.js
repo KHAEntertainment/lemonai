@@ -91,9 +91,16 @@ class LLM {
      * - assistant_id: Assistant ID, used to identify specific assistants in multi-turn conversations
      * - response_format: Response format, such as JSON
      * - tools: List of callable tool functions, used for advanced features like function calling
-     * - enable_thinking: Whether to enable thinking mode, applicable to Qwen3 model
+     * - enable_thinking: Whether to enable thinking mode, applicable to Qwen3 model only
      */
-    const supportOptions = ['temperature', 'top_p', 'max_tokens', 'stop', 'stream', 'assistant_id', 'response_format', 'tools', 'enable_thinking'];
+    const commonOptions = ['temperature', 'top_p', 'max_tokens', 'stop', 'stream', 'assistant_id', 'response_format', 'tools'];
+    const qwenSpecificOptions = ['enable_thinking'];
+    
+    // Determine if this is a Qwen model
+    const isQwenModel = model && (model.toLowerCase().includes('qwen') || model.toLowerCase().includes('qwq'));
+    
+    const supportOptions = isQwenModel ? [...commonOptions, ...qwenSpecificOptions] : commonOptions;
+    
     for (const key in options) {
       if (supportOptions.includes(key) && options[key] !== undefined) {
         body[key] = options[key];

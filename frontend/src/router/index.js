@@ -1,4 +1,3 @@
-import path from 'path';
 import { createRouter, createWebHashHistory, createWebHistory } from 'vue-router'
 
 const routes = [
@@ -119,14 +118,29 @@ const router = createRouter({
 
 router.beforeEach((to, from, next) => {
   const token = localStorage.getItem('access_token');
-  console.log("import.meta.env.VITE_IS_CLIENT === ",import.meta.env.VITE_IS_CLIENT);
+  const requireAuth = import.meta.env.VITE_REQUIRE_AUTH === 'true';
   const { meta = {} } = to;
-  // If route requires authentication and no token exists, redirect to login
-  // if (meta.verify && !token) {
-  //   console.log("Authentication failed, redirecting to login");
-  //   next({ name: 'login' });
-  //   return;
-  // }
+  
+  console.log("VITE_REQUIRE_AUTH:", requireAuth, "Has token:", !!token);
+  
+  // Public routes that don't need auth check
+  const publicRoutes = ['login', 'google'];
+  const isPublicRoute = publicRoutes.includes(to.name);
+  
+  // If auth is required, route needs verification, and user has no token
+  if (requireAuth && meta.verify && !token && !isPublicRoute) {
+    console.log("Authentication required, redirecting to login");
+    next({ name: 'login' });
+    return;
+  }
+  
+  // If user has token but is on login page, redirect to home
+  if (token && to.name === 'login') {
+    console.log("Already authenticated, redirecting to home");
+    next({ name: 'lemon' });
+    return;
+  }
+  
   next();
 })
 

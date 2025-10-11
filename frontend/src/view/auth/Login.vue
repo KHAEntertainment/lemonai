@@ -10,12 +10,12 @@
       <!-- Title -->
       <h2 class="auth-title">{{ pageTitle }}</h2>
       <div v-if="activeKey === 'login'">
-        <login @toRegister="activeKey = 'register'" @handleLogin="handleLogin" @toForgot="activeKey = 'forgot'" @handleGoogleLogin="handleGoogleLogin" @handleSMSLogin="activeKey = 'smsLogin'" />
+        <login @toRegister="handleRegisterClick" @handleLogin="handleLogin" @toForgot="activeKey = 'forgot'" @handleGoogleLogin="handleGoogleLogin" @handleSMSLogin="activeKey = 'smsLogin'" />
       </div>
       <div v-if="activeKey === 'smsLogin'">
         <smsLogin @toLogin="activeKey = 'login'" @handleLoginSMSCode="handleLoginSMSCode" />
       </div>
-      <div v-if="activeKey === 'register'">
+      <div v-if="activeKey === 'register' && allowRegistration">
         <!-- Register Form -->
         <register @toLogin="activeKey = 'login'" @handleRegister="handleRegister" @handleGoogleRegister="handleGoogleLogin"/>
       </div>
@@ -77,6 +77,7 @@ const { t } = useI18n();
 // 页面状态
 const activeKey = ref('login');
 const loading = ref(false);
+const allowRegistration = import.meta.env.VITE_ALLOW_REGISTRATION !== 'false';
 
 
 onMounted(() => {
@@ -175,6 +176,14 @@ const resendCode = async () => {
 
 const toHome = () => {
   router.push('/');
+};
+
+const handleRegisterClick = () => {
+  if (allowRegistration) {
+    activeKey.value = 'register';
+  } else {
+    message.warning(t('auth.registrationDisabled') || 'Registration is currently disabled');
+  }
 };
 // 处理登录
 const handleLogin = async (values) => {

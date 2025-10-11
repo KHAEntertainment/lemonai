@@ -26,3 +26,6 @@ docs
 *.sw?
 *.development
 .trae/*
+.env
+.env.local
+.env.*.local

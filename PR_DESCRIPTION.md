@@ -1,141 +1,162 @@
-# Critical Dependency Updates - Phase 1 & 2.1
+# Pull Request: Branding, Authentication Gating, and Quality-of-Life Improvements
 
 ## Summary
-This PR addresses critical security vulnerabilities and a major performance bottleneck in the Lemon AI codebase. All changes have been tested and are backwards compatible.
 
-## Impact
-- **Security**: 76 vulnerabilities → 6 vulnerabilities (-92% reduction!)
-- **Performance**: Fixed 10x+ slower router performance issue
-- **Stability**: All critical CVEs addressed
-- **Tests**: 6/7 tests passing (1 pre-existing DB test failure)
+This PR implements custom branding support (logo/favicon), optional authentication gating, and several critical bug fixes and quality-of-life improvements discovered during testing.
 
-## Changes
+## Features Added
 
-### Phase 1: Critical Security Updates ✅
+### 1. Custom Branding Support 🎨
+- **Logo Upload**: Upload custom logo via Settings > Basic
+- **Favicon Upload**: Upload custom favicon with real-time browser tab updates
+- **Settings Persistence**: Branding stored in Pinia store with persistence
+- **Fallback Handling**: Gracefully falls back to default assets when custom branding not set
+- **Backend Endpoint**: New `/api/file/upload_public` for public asset uploads
 
-#### 1.1 Electron Update
-- **Before**: `electron@29.2.0`
-- **After**: `electron@29.4.6`
-- **Fixes**:
-  - CVE: Heap Buffer Overflow in NativeImage (29.0.0-alpha.1 to 29.3.3)
-  - CVE: ASAR Integrity Bypass (partial fix, full fix requires v35.7.5+)
-- **Impact**: Critical security vulnerabilities patched
-- **Breaking Changes**: None
+**Files**:
+- `frontend/src/components/Logo.vue` - Dynamic logo with settings store integration
+- `frontend/src/view/setting/basic.vue` - File upload UI with previews
+- `src/routers/file/file.js` - Public upload endpoint
 
-#### 1.2 electron-forge Migration
-- **Before**: `electron-forge@5.2.4` (deprecated, 12 critical CVEs)
-- **After**: `@electron-forge/cli@7.8.1+` (maintained)
-- **Fixes**:
-  - babel-traverse arbitrary code execution (critical)
-  - xmldom multiple critical CVEs
-  - lodash prototype pollution (high)
-  - aws-sdk prototype pollution (high)
-  - Multiple other high/critical vulnerabilities
-- **Impact**: Removed 48 vulnerabilities in one step!
-- **Breaking Changes**: None (forge.config.js already used new namespace)
+### 2. Optional Authentication Gating 🔐
+- **Configurable Auth**: Toggle authentication requirements via environment variables
+- **Registration Control**: Enable/disable user registration
+- **Route Protection**: Frontend guards redirect unauthenticated users
+- **Backend Middleware**: 401 responses for protected routes when auth required
+- **Public Endpoints**: Whitelist for swagger, uploads, version checks
 
-#### 1.3 nodemon Update
-- **Before**: `nodemon@1.19.4`
-- **After**: `nodemon@3.1.10`
-- **Fixes**:
-  - chokidar (high severity)
-  - braces (uncontrolled resource consumption)
-  - micromatch (ReDoS)
-  - update-notifier (high severity)
-- **Impact**: Removed 14 vulnerabilities
-- **Breaking Changes**: None (nodemon.json config compatible)
+**Environment Variables**:
+```bash
+# Backend
+REQUIRE_AUTH=false          # Set to 'true' to require authentication
+ALLOW_REGISTRATION=true     # Set to 'false' to disable registration
 
-### Phase 2.1: Performance Critical Update ✅
+# Frontend
+VITE_REQUIRE_AUTH=false     # Should match backend setting
+VITE_ALLOW_REGISTRATION=true
+```
 
-#### Koa Router Migration
-- **Before**: `koa-router@7.4.0` (deprecated, 10x+ slower performance)
-- **After**: `@koa/router@13.1.0` (maintained, performant)
-- **Fixes**: Critical performance bottleneck in router library
-- **Impact**: Expected 10x+ performance improvement for all API routes
-- **Breaking Changes**: 
-  - Updated 50+ router files to use `new Router()` syntax
-  - All routes tested and working
+**Files**:
+- `src/middlewares/auth.js` - Complete rewrite with environment-based gating
+- `frontend/src/router/index.js` - Auth guards
+- `frontend/src/view/auth/Login.vue` - Registration UI gating
+- `.env.example` + `frontend/.env.example` - Documentation
+
+### 3. Docker Socket Auto-Detection 🐳
+- **Cross-Platform**: Auto-detects Docker socket on macOS, Linux, Windows
+- **Multiple Docker Variants**: Supports Docker Desktop, Colima, Rancher Desktop, OrbStack, rootless Docker
+- **DOCKER_HOST Support**: Respects environment variable override
+- **Graceful Fallback**: Clear error messages when socket not found
+- **No Manual Setup**: Works out-of-the-box, no symlinks needed
+
+**Files**:
+- `src/utils/docker_socket.js` - New auto-detection utility
+- `src/runtime/DockerRuntime.local.js` - Uses auto-detection
+- `.env.example` - DOCKER_HOST documentation
+
+## Bug Fixes
+
+### Issue 2: OpenAI `enable_thinking` Parameter Error ✅
+**Problem**: Qwen-specific `enable_thinking` parameter was sent to all LLM providers, causing 400 errors from OpenAI.
+
+**Fix**: Model-based parameter filtering
+
+**File**: `src/completion/llm.base.js`
+
+### Issue 3: Gemini API Check 404 Error ✅
+**Problem**: API validation assumed OpenAI-compatible `/chat/completions` endpoint, which Gemini doesn't have.
+
+**Fix**: Provider-aware API checking with Gemini-specific endpoint and response validation
+
+**Files**:
+- `src/utils/check_llm_api_availability.js`
+- `src/routers/platform/platform.js`
+- `frontend/src/view/setting/model.vue`
+
+### Issue 4: MCP Server Import Type Detection ✅
+**Problem**: HTTP MCP servers imported from JSON defaulted to "stdio" type, requiring manual correction.
+
+**Fix**: Improved type detection logic prioritizing URL-based detection
+
+**File**: `frontend/src/components/mcpServer/index.vue`
+
+## Security Improvements
+
+### Environment File Sanitization
+- `.env.example` restored to clean template (no API keys)
+- `frontend/.env.example` restored to clean template
+- `frontend/.gitignore` updated with `.env` patterns
+- Actual `.env` files properly ignored by git
+
+## Documentation
+
+### New Files
+- `CHANGES_BRANDING_AUTH.md` - Comprehensive feature documentation
+- `TESTING_NOTES.md` - All bugs found, fixes applied, testing checklists
+- `DOCKER_SOCKET_FIX_PROPOSAL.md` - Technical design for Docker auto-detection
+- `PR_DESCRIPTION.md` - This file
 
 ## Testing
 
-### Automated Tests
-```bash
-npm test
-```
-**Result**: 6/7 tests passing
-- ✅ Platform create, list, update operations
-- ✅ Error handling for non-existent platforms
-- ✅ System platform protection
-- ❌ Platform delete (pre-existing DB issue, not related to this PR)
+All changes tested on macOS (Apple Silicon) with:
+- Docker Desktop (Homebrew installation)
+- Multiple LLM providers (OpenAI, DeepSeek, Gemini)
+- MCP server imports
+- Logo/favicon uploads
+- Auth gating enabled/disabled
 
-### Manual Testing
-- Dev server starts: ✅
-- Router performance: ✅ (migrated to modern @koa/router)
-- No regression in functionality: ✅
+### Test Checklist
+- ✅ Logo upload and display with persistence
+- ✅ Favicon upload and browser tab update
+- ✅ Settings fallback to defaults when not set
+- ✅ OpenAI models work without `enable_thinking` error
+- ✅ DeepSeek continues working (no regression)
+- ✅ Docker socket auto-detected on macOS
+- ✅ MCP HTTP servers import with correct type
+- ✅ Auth gating blocks unauthenticated access
+- ✅ Registration can be disabled
+- ✅ Frontend build successful
+- ✅ Backend starts without errors
 
-## Remaining Vulnerabilities (6 total - Acceptable)
+## Breaking Changes
 
-### 1 Moderate
-- **electron** (ASAR bypass) - Requires upgrade to v35.7.5+ (major version jump, recommend separate PR)
+**None** - All changes are backward compatible and opt-in via configuration.
 
-### 5 Low
-- **tmp** package chain in @electron-forge/cli dependencies (low risk, dev-only)
+## Files Changed
 
-## Migration Notes
+**Total: 5 new + 15 modified = 20 files**
 
-### For Developers
-- Router imports changed from `require('koa-router')()` to `new (require('@koa/router'))()`
-- All router functionality remains identical
-- No API changes for consumers
+### New Files (5)
+1. `src/utils/docker_socket.js`
+2. `CHANGES_BRANDING_AUTH.md`
+3. `TESTING_NOTES.md`
+4. `DOCKER_SOCKET_FIX_PROPOSAL.md`
+5. `PR_DESCRIPTION.md`
 
-### For Deployment
-- `npm install` will pull updated dependencies
-- No configuration changes required
-- Backwards compatible with existing code
+### Modified Files (15)
+1. `src/completion/llm.base.js`
+2. `src/middlewares/auth.js`
+3. `src/routers/file/file.js`
+4. `src/routers/platform/platform.js`
+5. `src/runtime/DockerRuntime.local.js`
+6. `src/utils/check_llm_api_availability.js`
+7. `frontend/src/components/Logo.vue`
+8. `frontend/src/components/mcpServer/index.vue`
+9. `frontend/src/view/setting/basic.vue`
+10. `frontend/src/view/auth/Login.vue`
+11. `frontend/src/view/setting/model.vue`
+12. `frontend/src/router/index.js`
+13. `.env.example`
+14. `frontend/.env.example`
+15. `frontend/.gitignore`
 
-## Rollback Plan
-Each commit is atomic and can be reverted independently:
-```bash
-# Rollback router migration
-git revert a96b6ba
+## Performance Impact
 
-# Rollback nodemon
-git revert e90907b
-
-# Rollback electron-forge
-git revert 52c9db4
-
-# Rollback electron
-git revert c362616
-```
-
-## Next Steps (Future PRs)
-- Phase 2.2: Koa framework ecosystem updates (koa v3)
-- Phase 2.3-2.5: Frontend dependency updates (xlsx, Vite, Pinia)
-- Phase 3: Testing library updates (Chai, Sinon)
-- Phase 4: Utility library updates (uuid, marked, dotenv, pino)
-
-## References
-- DEPENDENCY_UPDATE_NOTES.md - Full analysis of all outdated dependencies
-- WARP.md - Developer runbook for building/testing
-
-## Checklist
-- [x] All critical security vulnerabilities addressed
-- [x] Performance bottleneck fixed
-- [x] Tests passing (6/7)
-- [x] No breaking changes to API
-- [x] All commits have descriptive messages
-- [x] Documentation updated (WARP.md added)
-- [ ] Code review completed
-- [ ] Approved for merge
+**Minimal**: 
+- Docker socket detection runs once at startup
+- Logo/favicon changes are client-side only
+- Auth middleware has early returns for public routes
 
 ---
 
-## Commit History
-```
-a96b6ba deps: migrate koa-router to @koa/router (10x performance fix)
-e90907b deps: update nodemon 1.19.4 -> 3.1.10
-52c9db4 deps: remove deprecated electron-forge package
-c362616 deps(critical): update electron 29.2.0 -> 29.4.6
-dce6787 docs: add WARP.md developer runbook
-```
+**Ready for Review** ✅
