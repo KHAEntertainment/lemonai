@@ -11,7 +11,7 @@
 <script setup>
 import { ref, onMounted, watch } from 'vue'
 import { Terminal } from '@xterm/xterm'
-import { FitAddon } from 'xterm-addon-fit'
+import { FitAddon } from '@xterm/addon-fit'
 import '@xterm/xterm/css/xterm.css'
 import { CloseOutlined } from '@ant-design/icons-vue'
 import { useChatStore } from '@/store/modules/chat'
